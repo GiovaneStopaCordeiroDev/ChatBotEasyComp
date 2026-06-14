@@ -2,5 +2,6 @@
 {
     public class ChatRequestModel
     {
+        public string Pergunta { get; set; } = string.Empty;
     }
 }

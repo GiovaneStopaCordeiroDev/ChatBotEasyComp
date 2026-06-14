@@ -5,51 +5,77 @@ namespace ChatBotEasyComp.Services
 {
     public class OpenAIService
     {
-        private readonly HttpClient _httpCliente;
+        private readonly HttpClient _httpClient;
         private readonly string _apiKey;
         private readonly string _systemPrompt;
 
-        public OpenAIService(HttpClient httpCliente, IConfiguration config)
+        public OpenAIService(HttpClient httpClient, IConfiguration configuration)
         {
-            // Ajustado para bater exatamente com o parâmetro recebido
-            _httpCliente = httpCliente;
-            _apiKey = config["OpenAI:ApiKey"] ?? "";
-            _systemPrompt = config["OpenAI:SystemPrompt"] ?? "";
+            _httpClient = httpClient;
+            _apiKey = configuration["OpenAI:ApiKey"] ?? string.Empty;
+            _systemPrompt = configuration["OpenAI:SystemPrompt"] ?? string.Empty;
         }
 
         public async Task<string> GetResponse(string pergunta)
         {
-            // Corrigido: Agora declarando os tipos das propriedades no objeto anônimo
-            var mensagem = new[]
+            var mensagens = new[]
             {
-                new { role = "system", content = _systemPrompt },
-                new { role = "user", content = pergunta }
+                new
+                {
+                    role = "system",
+                    content = _systemPrompt
+                },
+                new
+                {
+                    role = "user",
+                    content = pergunta
+                }
             };
 
-            var corpo = new
+            var requestBody = new
             {
                 model = "gpt-4o-mini",
-                max_tokens = 500,
-                messages = mensagem
+                messages = mensagens,
+                max_tokens = 500
             };
 
-            var json = JsonSerializer.Serialize(corpo);
+            var json = JsonSerializer.Serialize(requestBody);
 
-            var requisicao = new HttpRequestMessage(HttpMethod.Post, "https://api.openai.com/v1/chat/completions");
-            requisicao.Headers.Add("Authorization", $"Bearer {_apiKey}");
-            requisicao.Content = new StringContent(json, Encoding.UTF8, "application/json");
+            var request = new HttpRequestMessage(
+                HttpMethod.Post,
+                "https://api.openai.com/v1/chat/completions"
+            );
 
-            var resposta = await _httpCliente.SendAsync(requisicao);
-            var conteudo = await resposta.Content.ReadAsStringAsync();
+            request.Headers.Add("Authorization", $"Bearer {_apiKey}");
 
-            var documento = JsonDocument.Parse(conteudo);
-            var texto = documento.RootElement
+            request.Content = new StringContent(
+                json,
+                Encoding.UTF8,
+                "application/json"
+            );
+
+            var response = await _httpClient.SendAsync(request);
+
+            if (!response.IsSuccessStatusCode)
+            {
+                var error = await response.Content.ReadAsStringAsync();
+
+                throw new Exception(
+                    $"Erro ao chamar OpenAI: {response.StatusCode}\n{error}"
+                );
+            }
+
+            var content = await response.Content.ReadAsStringAsync();
+
+            using var document = JsonDocument.Parse(content);
+
+            var resposta = document.RootElement
                 .GetProperty("choices")[0]
                 .GetProperty("message")
                 .GetProperty("content")
                 .GetString();
 
-            return texto ?? "";
+            return resposta ?? "Nenhuma resposta encontrada.";
         }
     }
 }

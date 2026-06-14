@@ -1,5 +1,6 @@
 ﻿using Microsoft.AspNetCore.Mvc;
 using ChatBotEasyComp.Services;
+using ChatBotEasyComp.Models;
 
 namespace ChatBotEasyComp.Controllers
 {
@@ -15,11 +16,26 @@ namespace ChatBotEasyComp.Controllers
         }
 
         [HttpPost]
-        public async Task<IActionResult> Chat([FromBody] string pergunta)
+        public async Task<IActionResult> Chat([FromBody] ChatRequestModel request)
         {
-            var resposta = await _openAIService.GetResponse(pergunta);
+            if (string.IsNullOrWhiteSpace(request.Pergunta))
+            {
+                return BadRequest("A pergunta não pode estar vazia.");
+            }
 
-            return Ok(resposta);
+            try
+            {
+                var resposta = await _openAIService.GetResponse(request.Pergunta);
+
+                return Ok(new ChatResponseModel
+                {
+                    Resposta = resposta
+                });
+            }
+            catch (Exception ex)
+            {
+                return StatusCode(500, ex.Message);
+            }
         }
     }
 }
