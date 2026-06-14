@@ -17,8 +17,8 @@ Gerar respostas utilizando Inteligência Artificial.
 Validar e receber mensagens via Webhook do WhatsApp.
 Documentação automática com Swagger.
 
-👨‍💻 Equipe
-Giovane Stopa Cordeiro
-Vitor
-Kauã
-Paulo
+# Equipe
+Giovane Stopa Cordeiro,
+Vitor Baptistella Calisto,
+Kauã Rodrigues Marciano,
+Paulo Ricardo Tavares
